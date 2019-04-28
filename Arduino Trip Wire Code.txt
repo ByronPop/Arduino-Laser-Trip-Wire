@@ -1,0 +1,146 @@
+﻿// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include <Wire.h>
+#include "RTClib.h"
+
+
+#define LDRpin A0 // pin where we connected the LDR1 and the resistor
+#define LDRpin2 A1 // pin where we connected the LDR2 and the resistor
+#define MP3_RX 7//RX of Serial MP3 module connect to D7 of Arduino
+#define MP3_TX 8//TX to D8, note that D8 can not be used as RX on Mega2560, you should 
+
+
+#include <SoftwareSerial.h>
+#include "RedMP3.h"
+
+
+RTC_DS3231 rtc; //declaring rtc instance object
+MP3 mp3(MP3_RX, MP3_TX); //declaring MP3 player instance object
+
+
+
+
+int hourTime;
+int8_t volume = 0x1a;//0~0x1e (30 adjustable level)
+
+
+//various files for greetings
+int8_t folderName = 0x01;//folder name must be 01 02 03 04 ...
+int8_t fileName = 0x02; // prefix of file name must be 001xxx 002xxx 003xxx 004xxx ...
+int8_t secondFileName = 0x01; 
+int8_t mariachiFileName = 0x03;
+int8_t eveningFileName = 0x04;
+int8_t morningFileName = 0x06;
+int8_t afternoonFileName = 0x05;
+int8_t putOnSlippersFileName = 0x07;
+int8_t takeOffSlippersFileName = 0x08;
+int8_t welcomeDisco = 0x07;
+int8_t discoYeah = 0x08;
+int8_t stayExcelent = 0x09;
+
+
+
+
+int LDRValue = 0; // result of reading the analog pin A0
+int LDRValue2 = 0; // result of reading the analog pin A1
+
+
+int error = 0; //error detection variable
+
+
+void setup() {
+  Serial.begin(9600); // sets serial port for communication
+  #ifndef ESP8266
+  while (!Serial); // for Leonardo/Micro/Zero
+#endif
+
+
+  delay(3000); // wait for console opening
+
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, lets set the time!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+
+
+  delay(500);//Requires 500ms to wait for the MP3 module to initialize  
+  mp3.setVolume(volume);
+ 
+}
+
+
+void loop() {
+  LDRValue = analogRead(LDRpin); // read the value from the 1st LDR
+   LDRValue2 = analogRead(LDRpin2); // read the value from the 2nd LDR
+
+
+//date and time
+    DateTime now = rtc.now();
+
+
+ //error detection, if a file plays more than 5 times in 15 seconds, enter into infinite loop so to //prevent system from playing sound. To reset, turn device off and back on. 
+    if(now.second() % 10 == 0)
+    {
+      error = 0;
+    }
+
+
+    if(error>5)
+    {
+      while(1)
+      {
+      // infinite loop
+      }
+    }
+    
+if(LDRValue>800&&LDRValue2<800) // checks whether entry laser has been tripped
+   {
+    error+=1;
+     Serial.print("Tripped entry");
+    if(now.hour()<12)
+    {
+      mp3.playWithFileName(folderName,morningFileName);
+      delay(1500); // wait for file to play
+      mp3.playWithFileName(folderName,mariachiFileName);
+//      delay(1300);
+     
+    }
+
+
+    if(now.hour()>12&& now.hour()<17)
+      {
+        mp3.playWithFileName(folderName,afternoonFileName);
+      delay(1500); // wait for file to play
+      mp3.playWithFileName(folderName,mariachiFileName);
+//       delay(100);
+      }
+     if(now.hour()>17)
+     {
+      mp3.playWithFileName(folderName,eveningFileName);
+        delay(1400); // wait for file to play
+        mp3.stopPlay(); 
+     }
+   }
+if(LDRValue<800&&LDRValue2>800) // checks whether exit laser has been tripped
+{
+//  goodbye message
+  error+=1;
+  Serial.print("Tripped exit");
+  mp3.playWithFileName(folderName,secondFileName);
+  delay(1500); // wait for file to play
+  mp3.stopPlay(); 
+  
+  }
+
+
+}
