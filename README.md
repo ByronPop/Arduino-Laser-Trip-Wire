@@ -8,8 +8,6 @@ The device is split into two parts: the lasers and the detection and speaker sys
 
 ![Arduino Lazer picture](https://user-images.githubusercontent.com/33380363/56870551-39366380-69df-11e9-9b1a-94f73e4972d0.png)
 
-![Arduino lazer picture2](https://user-images.githubusercontent.com/33380363/56870563-700c7980-69df-11e9-87f4-0d28f3d7bd11.png)
-
 # Wiring Diagram
 ![Arduino Trip Wire Schematic 2 0](https://user-images.githubusercontent.com/33380363/56870575-96321980-69df-11e9-9a2c-6bc32e3995a4.png)
 
